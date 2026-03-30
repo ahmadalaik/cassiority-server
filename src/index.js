@@ -13,7 +13,7 @@ const app = express();
 const port = process.env.PORT || 3000;
 
 const corsOptions = {
-  origin: ["http://localhost:5173"], // Whitelist specific domains
+  origin: ["*", "http://localhost:5173"], // Whitelist specific domains
   credentials: true, // Enable passing of cookies/authentication headers
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE"], // Specify allowed methods
   allowedHeaders: ["Origin", "X-Requested-With", "Content-Type", "Accept", "Authorization"], // Specify allowed headers
