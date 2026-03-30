@@ -1,0 +1,154 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  user
+  fundraiser
+  admin
+}
+
+model User {
+  id                    Int      @id @default(autoincrement())
+  name                  String   @db.VarChar(255)
+  email                 String   @unique @db.VarChar(255)
+  password              String   @db.VarChar(255)
+  image                 String?  @db.VarChar(255)
+  imageId               String?  @db.VarChar(255)
+  refreshToken          String?  @db.VarChar(255)
+  refreshTokenExpiresAt BigInt?  @db.BigInt
+  role                  UserRole @default(user)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns           Campaign[]
+  donations           Donation[]
+  roleUpgradeRequests RoleUpgradeRequests[]
+
+  @@map("users")
+}
+
+enum RequestRole {
+  fundraiser
+  admin
+}
+
+enum RoleUpgradeStatus {
+  pending
+  approved
+  rejected
+}
+
+model RoleUpgradeRequests {
+  id            Int               @id @default(autoincrement())
+  userId        Int
+  requestedRole RequestRole
+  status        RoleUpgradeStatus @default(pending)
+  adminNotes    String?           @db.Text
+  processedBy   Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("role_upgrade_requests")
+}
+
+model Category {
+  id   Int    @id @default(autoincrement())
+  name String @db.VarChar(255)
+  slug String @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns Campaign[]
+
+  @@map("categories")
+}
+
+model PaymentMethod {
+  id                Int    @id @default(autoincrement())
+  type              String @db.VarChar(255)
+  provider          String @db.VarChar(255)
+  accountNumber     String @db.VarChar(255)
+  accountHolderName String @db.VarChar(255)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaigns Campaign[]
+
+  @@map("payment_methods")
+}
+
+enum CampaignStatus {
+  active
+  completed
+  canceled
+}
+
+model Campaign {
+  id            Int            @id @default(autoincrement())
+  userId        Int
+  categoryId    Int
+  title         String         @db.VarChar(255)
+  slug          String         @db.VarChar(255)
+  description   String         @db.Text
+  image         String?        @db.VarChar(255)
+  imageId       String?        @db.VarChar(255)
+  targetAmount  BigInt         @db.BigInt
+  currentAmount BigInt         @default(0) @db.BigInt
+  deadline      DateTime
+  totalDonors   BigInt?        @default(0)
+  status        CampaignStatus @default(active)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id])
+  category      Category        @relation(fields: [categoryId], references: [id])
+  donations     Donation[]
+  paymentMethod PaymentMethod[]
+
+  @@map("campaigns")
+}
+
+enum DonationStatus {
+  pending
+  success
+  failed
+}
+
+model Donation {
+  id              Int            @id @default(autoincrement())
+  campaignId      Int
+  userId          Int
+  donor           String
+  amount          BigInt
+  transferProof   String         @db.VarChar(255)
+  transferProofId String         @db.VarChar(255)
+  notes           String?        @db.Text
+  status          DonationStatus @default(pending)
+  anonymous       Boolean        @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  campaign Campaign @relation(fields: [campaignId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@map("donations")
+}
