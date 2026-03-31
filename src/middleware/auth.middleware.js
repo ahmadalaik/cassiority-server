@@ -1,13 +1,12 @@
 import jwt from "jsonwebtoken";
 import prisma from "../utils/prisma.js";
+import { sendError } from "../utils/response.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
     const header = req.get("Authorization");
     if (!header || !header.startsWith("Bearer ")) {
-      return res
-        .status(403)
-        .json({ message: "missing or invalid authorization format header" });
+      return sendError(res, "missing or invalid authorization format header", 403);
     }
 
     const token = header.replace("Bearer ", "");
@@ -16,7 +15,7 @@ export const authMiddleware = async (req, res, next) => {
     const auth = jwt.verify(token, jwtSecret);
     if (!auth) {
       console.log(Date.now(), " failed to verify token");
-      return res.status(401).json({ message: "unauthorized" });
+      return sendError(res, "unauthorized", 401);
     }
 
     const user = await prisma.user.findUnique({
@@ -24,7 +23,7 @@ export const authMiddleware = async (req, res, next) => {
     });
 
     if (!user) {
-      return res.status(401).json({ message: "unauthorized" });
+      return sendError(res, "unauthorized", 401);
     }
 
     req.user = {
@@ -39,6 +38,6 @@ export const authMiddleware = async (req, res, next) => {
   } catch (error) {
     console.log(Date.now(), " : ", error);
 
-    return res.status(401).json({ message: "unauthorized" });
+    return sendError(res, "unauthorized", 401);
   }
 };
